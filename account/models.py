@@ -34,6 +34,7 @@ class UserManager(BaseUserManager):
 
         return self._create_user(phone, password, **extra_fields)
 
+
 class User(AbstractUser):
     username = None
     first_name = models.CharField(max_length=255, blank=True, null=True)
@@ -44,3 +45,9 @@ class User(AbstractUser):
     objects = UserManager()
     USERNAME_FIELD = 'phone'
     REQUIRED_FIELDS = ['first_name', 'last_name']
+
+
+class OTP(models.Model):
+    phone = models.CharField(max_length=11, validators=[phone_regex])
+    otp = models.CharField(max_length=6, )
+    created_at = models.DateTimeField(auto_now_add=True)

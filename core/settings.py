@@ -110,3 +110,6 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'account.User'
+
+# minutes
+OTP_EXPIRE_TIME = 2
