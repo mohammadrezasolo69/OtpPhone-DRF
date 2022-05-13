@@ -1,10 +1,16 @@
-from account.models import OTP
 from datetime import timedelta, datetime
-from core.settings import OTP_EXPIRE_TIME
+
+from django.conf import settings
 from django.contrib.auth import get_user_model
 
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+from account.models import OTP
+
+from account.generate_otp import generate_code_opt
+
+# ---------------------------------------------------------------------------------------------------
 
 User = get_user_model()
 
@@ -32,11 +38,10 @@ class SendOtpSerializer(serializers.ModelSerializer):
         fields = ('phone',)
 
     def create(self, validated_data):
-        # create OTP for phone
+        """ create OTP """
         phone = validated_data['phone']
-        otp = '123456'
+        otp = generate_code_opt()  # Generate otp code
         validated_data['otp'] = otp
-
         return super().create(validated_data)
 
 
@@ -51,23 +56,27 @@ class VerifyOtpSerializer(serializers.Serializer):
     new_user = serializers.BooleanField(read_only=True)
 
     def validate(self, data):
-        phone = data.get['phone']
-        otp = data.get['otp']
+        phone = data.get('phone')
+        otp = data.get('otp')
 
         if not OTP.objects.filter(
                 phone=phone,
                 otp=otp,
-                created_at__gte=datetime.now() - timedelta(minutes=OTP_EXPIRE_TIME)).exists():
+                created_at__gte=datetime.now() - timedelta(minutes=settings.OTP_EXPIRE_TIME)).exists():
             raise serializers.ValidationError('OTP invalid')
         return data
 
     def create(self, validated_data):
-        phone = validated_data['phone']
+        phone = validated_data.get('phone')
 
-        user, created = User.objects.get_or_create(phone=phone, defaults={'phone': phone})
+        user, created = User.objects.get_or_create(phone=phone, defaults={'phone': phone, 'is_phone_verified': True})
+        if not created:
+            if not user.first_name:
+                created = True
+            if not user.is_phone_verified:
+                user.is_phone_verified = True
+                user.save()
 
-        if not created and not user.first_name:
-            created = True
         validated_data['new_user'] = created
 
         # generate JWT Token

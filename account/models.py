@@ -41,6 +41,7 @@ class User(AbstractUser):
     last_name = models.CharField(max_length=255, blank=True, null=True)
 
     phone = models.CharField(max_length=11, validators=[phone_regex], unique=True)
+    is_phone_verified = models.BooleanField(default=False)
 
     objects = UserManager()
     USERNAME_FIELD = 'phone'
